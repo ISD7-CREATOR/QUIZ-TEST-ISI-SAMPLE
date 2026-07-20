@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CWMD Quiz Test</title>
+<style>
+:root{--bg:#121019;--panel:#211d2a;--gold:#e0bd55;--text:#fff;--muted:#cbc7d2;--green:#62c878;--red:#ff7588}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#0c0a10,#1b1622);color:var(--text);min-height:100vh}.wrap{max-width:850px;margin:30px auto;padding:0 16px}.header,.card{background:var(--panel);border:1px solid rgba(224,189,85,.45);box-shadow:0 16px 35px rgba(0,0,0,.35)}.header{padding:20px;border-bottom:4px solid var(--gold)}h1,h2{color:var(--gold);margin-top:0}.card{padding:26px;margin-top:18px}.progress{height:14px;background:#46414c;border-radius:999px;overflow:hidden;margin:12px 0 24px}.progress>div{height:100%;width:0;background:linear-gradient(90deg,#9e761b,var(--gold));transition:.2s}.question{padding:18px;margin:14px 0;background:rgba(255,255,255,.035);border-left:4px solid var(--gold)}.question p{font-weight:700}.option{display:block;margin:9px 0;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:7px;cursor:pointer}.option:hover{border-color:var(--gold)}input[type=radio]{accent-color:var(--gold);margin-right:10px}.btn{padding:13px 20px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(#f1d36f,#c99b2c);font-weight:800;cursor:pointer}.btn:hover{filter:brightness(1.08)}#message{margin-top:14px;color:var(--red);font-weight:700}.results{display:none}.score{font-size:3rem;font-weight:900;color:var(--gold);margin:10px 0}.pass{color:var(--green)}.fail{color:var(--red)}.review-item{margin:12px 0;padding:14px;background:rgba(255,255,255,.04);border-left:4px solid var(--red)}.review-item.correct{border-left-color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>CWMD Foundations Quiz — 5 Question Test</h1>
+    <div>5 questions • 2 points each • 10 points total</div>
+  </div>
+
+  <section id="quizCard" class="card">
+    <div><strong id="progressLabel">0 of 5 answered</strong></div>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill"></div></div>
+
+    <form id="quizForm" novalidate>
+      <div id="questions"></div>
+      <button id="submitBtn" class="btn" type="submit">Submit Quiz</button>
+      <div id="message" role="alert" aria-live="assertive"></div>
+    </form>
+  </section>
+
+  <section id="resultsCard" class="card results" aria-live="polite">
+    <h2>Quiz Results</h2>
+    <div id="score" class="score"></div>
+    <div id="percentage"></div>
+    <h3 id="status"></h3>
+    <div id="review"></div>
+    <button id="retryBtn" class="btn" type="button">Try Again</button>
+  </section>
+</div>
+<script>
+(function(){
+'use strict';
+const questions=[
+ {q:'What does WMD stand for?',a:['Weapons of Military Defense','Weapons of Mass Destruction','Worldwide Military Doctrine','War-Making Devices'],c:1},
+ {q:'Which group contains common WMD categories?',a:['Nuclear, biological, chemical, and radiological','Air, land, sea, and space','Diplomatic, military, economic, and informational','Armor, artillery, infantry, and aviation'],c:0},
+ {q:'What is a central purpose of CWMD activities?',a:['Prevent, reduce, and respond to WMD threats','Replace all military doctrine','End international partnerships','Focus only on conventional weapons'],c:0},
+ {q:'Why should students study current CWMD strategy?',a:['To understand priorities that shape planning and operations','To avoid interagency coordination','To replace intelligence analysis','To eliminate operational risk'],c:0},
+ {q:'How many points is each question worth in this test?',a:['1 point','2 points','5 points','10 points'],c:1}
+];
+const pointsEach=2;
+const form=document.getElementById('quizForm');
+const questionsEl=document.getElementById('questions');
+const message=document.getElementById('message');
+const quizCard=document.getElementById('quizCard');
+const resultsCard=document.getElementById('resultsCard');
+const scoreEl=document.getElementById('score');
+const percentageEl=document.getElementById('percentage');
+const statusEl=document.getElementById('status');
+const reviewEl=document.getElementById('review');
+const retryBtn=document.getElementById('retryBtn');
+const progressFill=document.getElementById('progressFill');
+const progressLabel=document.getElementById('progressLabel');
+const progressBar=document.querySelector('[role="progressbar"]');
+
+function renderQuestions(){
+ questionsEl.innerHTML='';
+ questions.forEach((item,i)=>{
+  const block=document.createElement('div'); block.className='question';
+  const title=document.createElement('p'); title.textContent=`${i+1}. ${item.q}`; block.appendChild(title);
+  item.a.forEach((answer,j)=>{
+   const label=document.createElement('label'); label.className='option';
+   const input=document.createElement('input'); input.type='radio'; input.name=`q${i}`; input.value=String(j);
+   input.addEventListener('change',updateProgress);
+   label.appendChild(input); label.appendChild(document.createTextNode(answer)); block.appendChild(label);
+  });
+  questionsEl.appendChild(block);
+ });
+ updateProgress();
+}
+function answeredCount(){return questions.filter((_,i)=>form.querySelector(`input[name="q${i}"]:checked`)).length;}
+function updateProgress(){
+ const count=answeredCount(); const pct=Math.round(count/questions.length*100);
+ progressFill.style.width=pct+'%'; progressLabel.textContent=`${count} of ${questions.length} answered`;
+ progressBar.setAttribute('aria-valuenow',String(pct)); message.textContent='';
+}
+function submitQuiz(event){
+ event.preventDefault();
+ const unanswered=[]; const chosen=[];
+ questions.forEach((_,i)=>{const selected=form.querySelector(`input[name="q${i}"]:checked`); if(!selected) unanswered.push(i+1); else chosen.push(Number(selected.value));});
+ if(unanswered.length){message.textContent='Please answer question(s): '+unanswered.join(', ')+'.'; return;}
+ let correct=0; questions.forEach((item,i)=>{if(chosen[i]===item.c) correct++;});
+ const earned=correct*pointsEach; const total=questions.length*pointsEach; const percent=Math.round(earned/total*100); const passed=percent>=80;
+ scoreEl.textContent=`${earned} / ${total} points`;
+ percentageEl.textContent=`${correct} of ${questions.length} correct — ${percent}%`;
+ statusEl.textContent=passed?'PASS':'NOT PASSED'; statusEl.className=passed?'pass':'fail';
+ reviewEl.innerHTML='<h3>Answer Review</h3>';
+ questions.forEach((item,i)=>{
+  const row=document.createElement('div'); const ok=chosen[i]===item.c; row.className='review-item'+(ok?' correct':'');
+  row.innerHTML=`<strong>Question ${i+1}: ${ok?'Correct':'Incorrect'}</strong><br>Your answer: ${escapeHtml(item.a[chosen[i]])}<br>Correct answer: ${escapeHtml(item.a[item.c])}`;
+  reviewEl.appendChild(row);
+ });
+ quizCard.style.display='none'; resultsCard.style.display='block'; window.scrollTo({top:0,behavior:'smooth'});
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function retry(){form.reset(); quizCard.style.display='block'; resultsCard.style.display='none'; reviewEl.innerHTML=''; message.textContent=''; updateProgress(); window.scrollTo({top:0,behavior:'smooth'});}
+form.addEventListener('submit',submitQuiz);
+retryBtn.addEventListener('click',retry);
+renderQuestions();
+
+// Automated browser self-test: open the file with ?selftest=1.
+if (new URLSearchParams(window.location.search).get('selftest') === '1') {
+  questions.forEach((item, i) => {
+    const radio = form.querySelector(`input[name=\"q${i}\"][value=\"${item.c}\"]`);
+    if (radio) radio.checked = true;
+  });
+  updateProgress();
+  form.requestSubmit();
+}
+})();
+</script>
+</body>
+</html>
